@@ -1,0 +1,2 @@
+# dataset_information_service_demo_cchstats
+以陳傑憲選手2024年12強棒球賽打擊表現演示資料集、資訊提供服務、預測服務與程式的關係
