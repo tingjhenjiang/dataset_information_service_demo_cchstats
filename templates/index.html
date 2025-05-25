@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <style>
+      .container_row {
+        display:table-row;
+        clear:both;
+      }
+      #filtered_data {
+        display:block;
+        width:40%;
+        float:left;
+        clear:both;
+        position: relative;
+      }
+      #filtered_data table {
+        border: 1px solid gray;
+        border-collapse: collapse;
+      }
+      #filtered_data th, #filtered_data th {
+        font-size: smaller;
+        font-weight: lighter;
+        padding:2px;
+      }
+      #filtered_data td {
+        font-weight: lighter;
+      }
+      #chartContainer {
+        display:block;
+        float:right;
+        position: relative;
+        height:80vh;
+        width:40vw;
+        padding-left: 10px;
+      }
+      #prediction {
+        clear:both;
+      }
+    </style>
+    <title>陳傑憲2024 P12打擊成績</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <div>
+    <fieldset>
+      <legend> 設定篩選條件/預測基礎</legend>
+      <form action="/" type="get" style="display:table-cell;width:75%;">
+
+        <div>
+          <label for="pitcherLeague">pitcherLeague: </label>
+          <select id="pitcherLeague" name="pitcherLeague">
+            <option value="">N/A</option>
+            <optgroup label="Non-MLB System">
+              <option value="Fgn">Fgn</option>
+              <option value="Ind">Ind</option>
+            <optgroup label="MLB System">
+              <option value="A+">A+</option>
+              <option value="AA">AA</option>
+              <option value="AAA">AAA</option>
+            </optgroup>
+            </select>
+        </div>
+
+        <div>
+          <label for="throwinghand">throwinghand(若未設定則以右手為基礎預測;若同時選擇則以左手為基礎預測): </label>
+          <label for="throwinghandL">L:</label><input id="throwinghandL" type="checkbox" name="throwinghand" value="L" />
+          <label for="throwinghandR">R:</label><input id="throwinghandR" type="checkbox" name="throwinghand" value="R" />
+        </div>
+          
+        <div>
+          runnersOnBase:
+          <label for="runnersOnBase1">1壘</label><input id="runnersOnBase1" type="checkbox" name="runnersOnBase1" value="1" />
+          <label for="runnersOnBase2">2壘</label><input id="runnersOnBase2" type="checkbox" name="runnersOnBase2" value="1" />
+          <label for="runnersOnBase3">3壘</label><input id="runnersOnBase3" type="checkbox" name="runnersOnBase3" value="1" />
+        </div>
+          
+        <div>
+          <label for="strikeFaced">strikeFaced: </label>
+          <input type="text" id="strikeFaced" name="strikeFaced" />
+        </div>
+
+        <div>
+          <label for="ballFaced">ballFaced: </label>
+          <input type="text" id="ballFaced" name="ballFaced" />
+        </div>
+        <div>
+          <input type="submit" id="submit" name="submit" />
+        </div>
+        
+      </form>
+      <div style="display:table-cell;padding-left:20px;">
+        目前檢索條件為 {{input_data}}
+      </div>
+
+    </fieldset>
+    </div>
+    <div class="container_row">
+
+      <div id="filtered_data">
+        <h2> 根據條件篩選後打擊紀錄 </h2>
+        <p>共有 {{nrow_filtered_data}} 筆紀錄，平均獲得 {{avg_bases}} 個壘包</p>
+          {{grouped_filtered_data_table|safe}}
+      </div>
+      <div id="chartContainer">
+        <canvas id="myChart">
+          <p>資料分布圖</p>
+        </canvas>
+        <script lang="javascript">
+          var ctx = document.getElementById("myChart").getContext('2d');
+          const config = {
+            type: 'bar',
+            responsive: true,
+            maintainAspectRatio: false,
+            data: {
+              labels: [0, 1, 2, 3, 4],
+              datasets: [{
+                label: '打席數',
+                data: {{chart_data}},
+                backgroundColor: [
+                  'rgba(255, 99, 132, 0.2)',
+                  'rgba(54, 162, 235, 0.2)',
+                  'rgba(255, 206, 86, 0.2)',
+                  'rgba(75, 192, 192, 0.2)',
+                  'rgba(153, 102, 255, 0.2)',
+                ],
+                borderColor: [
+                  'rgba(255, 99, 132)',
+                  'rgba(54, 162, 235)',
+                  'rgba(255, 206, 86)',
+                  'rgba(75, 192, 192)',
+                  'rgba(153, 102, 255)',
+                ],
+                borderWidth: 1
+              }],
+            },
+            options: {
+              scales: {
+                y: {
+                  beginAtZero: true
+                }
+              },
+              plugins: {
+                title: {
+                  display: true,
+                  text: '獲得／推進壘包數打席分布直方圖',
+                  font: {
+                    size: 24,
+                  }
+                },
+                legend: {
+                  labels: {
+                    font: {
+                        size: 18
+                    }
+                  }
+                }
+              }
+            },
+          };
+          var myChart = new Chart(ctx, config);
+        </script>
+      </div>
+    </div>
+    <div class="container_row">
+      <div id="prediction">
+        <h2> 預測打席結果 </h2>
+        <p>根據{{test_input_data}}<br />
+        預測結果：獲得/推進 {{prediction}} 個壘包</p>
+      </div>
+    </div>
+    <div class="container_row">
+      <div>
+        <h2>決策樹模型預測依據解釋</h2>
+        <img src="tree_plot.png" />
+      </div>
+    </div>
+  </body>
+</html>
