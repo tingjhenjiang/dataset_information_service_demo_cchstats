@@ -9,3 +9,6 @@
 * 透過 conda env create -f cchstats.yml 指令創建環境
 * 確定位於 cchstats.py 的目錄後，執行 python cchstats.py
 * 在瀏覽器瀏覽 [http://localhost:5000/](http://localhost:5000/)
+
+# Demo
+[程式運作實例與說明](https://www.youtube.com/watch?v=Bu6aBD84l4M)
