@@ -1,14 +1,11 @@
 # %%
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, send_file
 from flask import render_template
 import matplotlib.pyplot as plt
 import io
-import os
 import pandas as pd
 from sklearn import tree
 from pathlib import Path
-import json
-import ast
 # %%
 # 找出程式檔所在目錄
 parent_folder = Path(__file__).parent
@@ -18,24 +15,7 @@ dataset_file = parent_folder  / 'ChenChiehHsien2024P12PlayLog.xlsx'
 cch_batting_stats = pd.read_excel(dataset_file)
 
 # 把壘上有人的情形分別轉換為 1壘是否有人 2壘是否有人 3壘是否有人 的特徵
-runnersOnBasedf = pd.DataFrame.from_dict({
-    'runnersOnBase':  [0,1,2,3,12,13,23],
-    'runnersOnBase1': [0,1,0,0,1, 1, 0],
-    'runnersOnBase2': [0,0,1,0,1, 0, 1],
-    'runnersOnBase3': [0,0,0,1,0, 1, 1],
-})
-cch_batting_stats = cch_batting_stats.merge(runnersOnBasedf, how='left', on='runnersOnBase')
 cch_batting_stats.loc[cch_batting_stats['runnersOnBase']!=0,'runnersOnBase'] = 1 # 將壘上有人的情形統一為1，無人則為0
-# 把投手所屬聯盟的情形分別轉換為 是否為Fgn 是否為Ind 是否為A+ 是否為AA 是否為AAA 的特徵
-pitcherLeagueDf = pd.DataFrame.from_dict({
-    'pitcherLeague':    ['Fgn', 'Ind', 'A+', 'AA', 'AAA'],
-    'pitcherLeagueFgn': [1,0,0,0,0],
-    'pitcherLeagueInd': [0,1,0,0,0],
-    'pitcherLeagueA+':  [0,0,1,0,0],
-    'pitcherLeagueAA':  [0,0,0,1,0],
-    'pitcherLeagueAAA': [0,0,0,0,1],
-})
-cch_batting_stats = cch_batting_stats.merge(pitcherLeagueDf, how='left', on='pitcherLeague')
 
 # 在資料集中選取需要的欄位
 cch_batting_stats_necessary = cch_batting_stats.loc[:, ['pitcherLeague','pitcherLeagueFgn','pitcherLeagueInd','pitcherLeagueA+','pitcherLeagueAA','pitcherLeagueAAA','throwinghand','runnersOnBase','runnersOnBase1','runnersOnBase2','runnersOnBase3','bases','pitchFaced','strikeFaced','ballFaced']]
@@ -47,6 +27,15 @@ y = cch_batting_stats_necessary.loc[:,['bases']]
 throwing_hand_codes = {'R':0, 'L':1}
 x['throwinghand'] = x['throwinghand'].replace(throwing_hand_codes)
 x['throwinghand'] = x['throwinghand'].astype('int')
+# 把投手所屬聯盟的情形分別轉換為 是否為Fgn 是否為Ind 是否為A+ 是否為AA 是否為AAA 的特徵
+pitcherLeagueDf = pd.DataFrame.from_dict({
+    'pitcherLeague':    ['Fgn', 'Ind', 'A+', 'AA', 'AAA'],
+    'pitcherLeagueFgn': [1,0,0,0,0],
+    'pitcherLeagueInd': [0,1,0,0,0],
+    'pitcherLeagueA+':  [0,0,1,0,0],
+    'pitcherLeagueAA':  [0,0,0,1,0],
+    'pitcherLeagueAAA': [0,0,0,0,1],
+})
 
 # 建立決策樹預測與解釋模型
 clf = tree.DecisionTreeRegressor()
@@ -130,7 +119,7 @@ def index():
     test_data = pd.DataFrame.from_records([test_input_data])
     test_data = test_data.merge(pitcherLeagueDf, how='left', on='pitcherLeague').drop(columns=['pitcherLeague'])
     test_data['throwinghand'] =  test_data['throwinghand'].replace(throwing_hand_codes)
-    test_data = test_data.loc[:,feature_names] # 只保留特徵值
+    test_data = test_data.loc[:,feature_names] # 只保留特徵值並重新排序特徵值欄位
     prediction = clf.predict(test_data)[0]
     
     # 渲染至網頁呈現結果
@@ -145,12 +134,13 @@ def index():
         nrow_filtered_data=filtered_cch_batting_stats.shape[0]
         )
 
-# 提供決策樹圖表的路由
+# 提供決策樹圖表的路徑
 @app.route("/tree_plot.png", methods=['GET'])
 def output_tree():
     new_buffer = io.BytesIO(cached_tree_plot)
     return send_file(new_buffer, mimetype="image/png")
 
+# 當程式被直接執行時，啟動Flask應用
 if __name__ == '__main__':
     app.debug = True
     app.run()
